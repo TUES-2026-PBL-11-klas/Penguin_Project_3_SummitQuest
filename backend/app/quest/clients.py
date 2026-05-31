@@ -3,7 +3,6 @@ import structlog
 import httpx
 
 from app.core.config import settings
-from app.tracking.weather_client import WeatherClient
 
 logger = structlog.get_logger(__name__)
 

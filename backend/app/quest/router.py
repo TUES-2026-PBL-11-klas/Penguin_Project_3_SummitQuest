@@ -3,7 +3,8 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
-from app.quest.clients import AIClient, OsrmClient, WeatherClient
+from app.quest.clients import AIClient, OsrmClient
+from app.tracking.weather_client import WeatherClient
 from app.quest.engine import NoTrailPointsError, QuestEngineImpl
 from app.quest.strategies import TrailPointData
 
