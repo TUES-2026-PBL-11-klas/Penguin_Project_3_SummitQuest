@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import DateTime, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
@@ -20,3 +20,10 @@ class UserBadge(Base):
     )
 
     earned_at: Mapped[datetime] = mapped_column(DateTime)
+
+    user = relationship(
+        "User",
+        back_populates="badges"
+    )
+
+    badge = relationship("Badge")

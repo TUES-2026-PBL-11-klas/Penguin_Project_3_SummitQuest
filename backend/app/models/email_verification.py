@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import String, Boolean, DateTime, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
@@ -24,8 +24,6 @@ class EmailVerification(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime)
 
     used: Mapped[bool] = mapped_column(Boolean, default=False)
-
-    from sqlalchemy.orm import relationship
 
     user = relationship(
         "User",

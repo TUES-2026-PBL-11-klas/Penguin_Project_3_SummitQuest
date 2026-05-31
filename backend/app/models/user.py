@@ -40,10 +40,4 @@ class User(Base):
 
     quests = relationship("Quest", back_populates="user")
     badges = relationship("UserBadge", back_populates="user")
-
-    from sqlalchemy.orm import relationship
-
-    user = relationship(
-        "User",
-        back_populates="email_verifications"
-    )
+    email_verifications = relationship("EmailVerification", back_populates="user")

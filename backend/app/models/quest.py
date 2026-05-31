@@ -58,8 +58,8 @@ class Quest(Base):
         back_populates="quests"
     )
 
-    user = relationship(
-        "User",
+    trail_point = relationship(
+        "TrailPoint",
         back_populates="quests"
     )
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import BigInteger, Integer, String, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
@@ -28,3 +28,8 @@ class TrailPoint(Base):
     region: Mapped[str] = mapped_column(String(255))
 
     last_synced_at: Mapped[datetime] = mapped_column(DateTime)
+
+    quests = relationship(
+        "Quest",
+        back_populates="trail_point"
+    )
