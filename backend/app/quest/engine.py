@@ -7,7 +7,8 @@ from uuid import uuid4
 
 import structlog
 
-from app.quest.clients import AIClient, OsrmClient, WeatherClient
+from app.quest.clients import AIClient, OsrmClient
+from app.tracking.weather_client import WeatherClient
 from app.quest.strategies import TrailPointData, get_strategy
 
 logger = structlog.get_logger(__name__)
