@@ -3,20 +3,9 @@ import structlog
 import httpx
 
 from app.core.config import settings
+from app.tracking.weather_client import WeatherClient
 
 logger = structlog.get_logger(__name__)
-
-
-# TODO: replace with Dancho's implementation from tracking/
-class WeatherClient:
-    async def get_forecast(self, lat: float, lon: float) -> dict:
-        return {
-            "list": [
-                {"main": {"temp": 18}, "weather": [{"description": "clear sky"}]},
-                {"main": {"temp": 15}, "weather": [{"description": "few clouds"}]},
-                {"main": {"temp": 13}, "weather": [{"description": "scattered clouds"}]},
-            ]
-        }
 
 
 # TODO: replace with Dancho's implementation from tracking/
@@ -65,6 +54,7 @@ class AIClient:
                 tip: str = response.json()["choices"][0]["message"]["content"].strip()
                 logger.info("clothing_tip_generated", persona=persona, tip=tip)
                 return tip
+
         except Exception as exc:
             logger.warning("clothing_tip_failed", error=str(exc))
             return "Dress in layers suitable for mountain weather."
