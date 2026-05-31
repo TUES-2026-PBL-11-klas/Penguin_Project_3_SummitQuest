@@ -1,7 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.quest.clients import AIClient, OsrmClient, WeatherClient
+from app.database.session import get_db
+from app.quest.clients import AIClient, OsrmClient
+from app.tracking.weather_client import WeatherClient
 from app.quest.engine import NoTrailPointsError, QuestEngineImpl
 from app.quest.strategies import TrailPointData
 
@@ -24,9 +27,9 @@ class QuestRequest(BaseModel):
     transport_mode: str
 
 
-def get_engine() -> QuestEngineImpl:
+def get_engine(db: AsyncSession = Depends(get_db)) -> QuestEngineImpl:
     return QuestEngineImpl(
-        weather_client=WeatherClient(),
+        weather_client=WeatherClient(session=db),
         osrm_client=OsrmClient(),
         ai_client=AIClient(),
     )
@@ -46,5 +49,6 @@ async def generate_quest(
             transport_mode=request.transport_mode,
             trail_points=MOCK_TRAILS,
         )
+
     except NoTrailPointsError as e:
         raise HTTPException(status_code=404, detail=str(e))
