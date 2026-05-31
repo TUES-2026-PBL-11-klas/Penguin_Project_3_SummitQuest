@@ -1,0 +1,106 @@
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React, { useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BackButton, Field } from '../components/forms';
+import { Button, Logo } from '../components/ui';
+import { RootStackParamList } from '../navigation/types';
+import { colors, spacing, type } from '../theme';
+
+type Nav = NativeStackNavigationProp<RootStackParamList, 'LogIn'>;
+
+const LogInScreen: React.FC = () => {
+  const navigation = useNavigation<Nav>();
+  const insets = useSafeAreaInsets();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const canSubmit = email.trim() && password.trim();
+  const submit = () => {
+    if (!canSubmit) return;
+    navigation.reset({ index: 0, routes: [{ name: 'FindQuest' }] });
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: insets.top + spacing.md,
+          paddingBottom: spacing.xxxl,
+          paddingHorizontal: spacing.xl,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <BackButton onPress={() => navigation.goBack()} />
+
+        <View style={styles.brand}>
+          <Logo size={56} />
+        </View>
+        <Text style={styles.title}>Welcome back</Text>
+        <Text style={styles.subtitle}>Log in to continue your quests.</Text>
+
+        <View style={{ marginTop: spacing.xxl }}>
+          <Field
+            label="Email"
+            icon="mail-outline"
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@email.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <Field
+            label="Password"
+            icon="lock-closed-outline"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="••••••••"
+            secureTextEntry
+          />
+        </View>
+
+        <Pressable hitSlop={6} style={{ alignSelf: 'flex-end', marginBottom: spacing.xl }}>
+          <Text style={styles.forgot}>Forgot password?</Text>
+        </Pressable>
+
+        <Button
+          title="Log in"
+          icon="arrow-forward"
+          onPress={submit}
+          disabled={!canSubmit}
+          fullWidth
+        />
+
+        <Pressable onPress={() => navigation.navigate('SignUp')} style={{ marginTop: spacing.xl }}>
+          <Text style={styles.footer}>
+            New to SummitQuest? <Text style={styles.footerLink}>Sign up</Text>
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+};
+
+const styles = StyleSheet.create({
+  brand: { alignItems: 'center', marginTop: spacing.xxxl },
+  title: { ...type.h1, color: colors.brownDark, textAlign: 'center', marginTop: spacing.xl },
+  subtitle: { ...type.body, color: colors.textMuted, textAlign: 'center', marginTop: spacing.xs },
+  forgot: { ...type.label, color: colors.green },
+  footer: { ...type.body, color: colors.textMuted, textAlign: 'center' },
+  footerLink: { color: colors.green, fontWeight: '700' },
+});
+
+export default LogInScreen;
