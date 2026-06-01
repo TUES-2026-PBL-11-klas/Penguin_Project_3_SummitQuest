@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     OPENWEATHER_API_KEY: str = "b29ae2c35f90d91f45e86a755900d0f3"
     OSRM_BASE_URL: str = "http://router.project-osrm.org"
+    OVERPASS_BASE_URL: str = "https://overpass-api.de/api/interpreter"
     MISTRAL_API_KEY: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
