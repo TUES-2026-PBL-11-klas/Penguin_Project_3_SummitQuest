@@ -7,7 +7,8 @@ from uuid import uuid4
 
 import structlog
 
-from app.quest.clients import AIClient, OsrmClient
+from app.quest.clients import AIClient
+from app.tracking.osrm_client import OsrmClient
 from app.tracking.weather_client import WeatherClient
 from app.quest.strategies import TrailPointData, get_strategy
 
@@ -60,13 +61,14 @@ class QuestEngineImpl:
         trail_lat: float,
         trail_lon: float,
         persona: str,
+        transport_mode: str,
     ) -> ExternalData:
         data = ExternalData()
         queue: asyncio.Queue = asyncio.Queue()
 
         async def producer() -> None:
             await queue.put(("weather", self._weather.get_forecast(trail_lat, trail_lon)))
-            await queue.put(("osrm", self._osrm.get_travel_time_min(user_lat, user_lon, trail_lat, trail_lon)))
+            await queue.put( ( "osrm", self._osrm.get_travel_time_min( user_lat, user_lon, trail_lat, trail_lon, transport_mode=transport_mode, ), ) )            
             await queue.put(None)
 
         async def consumer() -> None:
@@ -103,8 +105,7 @@ class QuestEngineImpl:
         selected = random.choice(filtered)
         logger.info("trail_point_selected", trail_id=selected.id, trail_name=selected.name)
 
-        external = await self._fetch_external_data(lat, lon, selected.lat, selected.lon, persona)
-
+        external = await self._fetch_external_data( lat, lon, selected.lat, selected.lon, persona, transport_mode, )
         elevation_m = selected.elevation_m
         estimated_duration_min = int((elevation_m / 600) * 60)
         now = datetime.utcnow()

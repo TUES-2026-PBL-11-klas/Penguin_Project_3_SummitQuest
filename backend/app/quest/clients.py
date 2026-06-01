@@ -7,18 +7,6 @@ from app.core.config import settings
 logger = structlog.get_logger(__name__)
 
 
-# TODO: replace with Dancho's implementation from tracking/
-class OsrmClient:
-    async def get_travel_time_min(
-        self,
-        from_lat: float,
-        from_lon: float,
-        to_lat: float,
-        to_lon: float,
-    ) -> float:
-        return 45.0
-
-
 class AIClient:
     _url = "https://api.mistral.ai/v1/chat/completions"
     _model = "mistral-small-latest"
