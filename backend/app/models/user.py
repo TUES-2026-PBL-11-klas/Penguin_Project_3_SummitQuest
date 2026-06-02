@@ -1,31 +1,22 @@
 from datetime import datetime
-from uuid import UUID, uuid4
 from sqlalchemy import String, Boolean, Integer, Float, DateTime
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.models.base import Base
-from sqlalchemy import Enum
-from app.models.enums import PersonaEnum
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True),
-        primary_key=True,
-        default=uuid4
-    )
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    persona: Mapped[PersonaEnum] = mapped_column(
-        Enum(PersonaEnum, name="persona_enum"),
-        nullable=False
-    )
+    persona: Mapped[str] = mapped_column(String(50), nullable=False)
 
     has_car: Mapped[bool] = mapped_column(Boolean, default=False)
 
