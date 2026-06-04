@@ -73,4 +73,17 @@ async def login(
         "token_type": "bearer"
     }
 
+from app.auth.security import get_current_user
+from app.models.user import User
 
+@router.get("/me")
+async def me(
+    current_user: User = Depends(get_current_user)
+):
+    return {
+        "id": str(current_user.id),
+        "email": current_user.email,
+        "persona": current_user.persona,
+        "level": current_user.level,
+        "xp": current_user.xp
+    }
