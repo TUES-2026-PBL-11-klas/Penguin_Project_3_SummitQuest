@@ -1,3 +1,6 @@
+from app.auth.schemas import VerifyEmailRequest
+from app.auth.service import verify_email
+
 from fastapi import (
     APIRouter,
     Depends,
@@ -8,12 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.schemas import (
     RegisterRequest,
-    LoginRequest
+    LoginRequest,
+    VerifyEmailRequest
 )
 
 from app.auth.service import (
     create_user,
-    login_user
+    login_user,
+    verify_email
 )
 
 from app.core.dependencies import get_db
@@ -30,19 +35,24 @@ async def register(
     db: AsyncSession = Depends(get_db)
 ):
     try:
-        user = await create_user(
+        result = await create_user(
             db=db,
             email=request.email,
             password=request.password,
             persona=request.persona,
             weight_kg=request.weight_kg
         )
+        
+        user = result["user"]
 
         return {
             "id": user.id,
             "email": user.email,
-            "persona": user.persona
+            "persona": user.persona,
+            "verification_token": result["verification_token"]
         }
+
+
 
     except ValueError as e:
         raise HTTPException(
@@ -75,6 +85,26 @@ async def login(
 
 from app.auth.security import get_current_user
 from app.models.user import User
+
+@router.post("/verify-email")
+async def verify_email_endpoint(
+    request: VerifyEmailRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    success = await verify_email(
+        db,
+        request.token
+    )
+
+    if not success:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired token"
+        )
+
+    return {
+        "message": "Email verified successfully"
+    }
 
 @router.get("/me")
 async def me(
