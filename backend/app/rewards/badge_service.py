@@ -3,7 +3,6 @@ from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-import structlog
 
 from app.models.badge import Badge
 from app.models.quest import Quest
