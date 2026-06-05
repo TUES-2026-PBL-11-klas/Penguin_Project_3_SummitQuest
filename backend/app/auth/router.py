@@ -1,12 +1,8 @@
-from app.auth.schemas import VerifyEmailRequest
-from app.auth.service import verify_email
-
 from fastapi import (
     APIRouter,
     Depends,
     HTTPException
 )
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.schemas import (
@@ -14,14 +10,14 @@ from app.auth.schemas import (
     LoginRequest,
     VerifyEmailRequest
 )
-
+from app.auth.security import get_current_user
 from app.auth.service import (
     create_user,
     login_user,
     verify_email
 )
-
 from app.core.dependencies import get_db
+from app.models.user import User
 
 router = APIRouter(
     prefix="/auth",
@@ -82,9 +78,6 @@ async def login(
         "access_token": token,
         "token_type": "bearer"
     }
-
-from app.auth.security import get_current_user
-from app.models.user import User
 
 @router.post("/verify-email")
 async def verify_email_endpoint(
