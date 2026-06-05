@@ -56,15 +56,6 @@ class BadgeService:
                     badge_id=str(badge.id),
                 )
 
-                import structlog
-
-                logger = structlog.get_logger(__name__)
-
-                logger.info(
-                    "badge_awarded",
-                    user_id=str(user_id),
-                    badge_id=str(badge.id),
-                )
                 
         await self._session.commit()
 
