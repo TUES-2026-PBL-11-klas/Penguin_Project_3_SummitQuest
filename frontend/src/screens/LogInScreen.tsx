@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -11,9 +12,11 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { apiClient } from '../api/client';
 import { BackButton, Field } from '../components/forms';
 import { Button, Logo } from '../components/ui';
 import { RootStackParamList } from '../navigation/types';
+import { useAppState } from '../state/AppState';
 import { colors, spacing, type } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'LogIn'>;
@@ -21,13 +24,27 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'LogIn'>;
 const LogInScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
+  const appState = useAppState();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const canSubmit = email.trim() && password.trim();
-  const submit = () => {
-    if (!canSubmit) return;
-    navigation.reset({ index: 0, routes: [{ name: 'FindQuest' }] });
+  const submit = async () => {
+    if (!canSubmit || loading) return;
+    setLoading(true);
+    try {
+      const { access_token } = await apiClient.login({ email: email.trim(), password });
+      const data = await apiClient.getMe(access_token);
+      appState.setAuth(access_token, data.id);
+      appState.updateProfile({ email: data.email, persona: data.persona } as Parameters<typeof appState.updateProfile>[0]);
+      navigation.reset({ index: 0, routes: [{ name: 'FindQuest' }] });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      Alert.alert('Login failed', message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -81,6 +98,7 @@ const LogInScreen: React.FC = () => {
           icon="arrow-forward"
           onPress={submit}
           disabled={!canSubmit}
+          loading={loading}
           fullWidth
         />
 

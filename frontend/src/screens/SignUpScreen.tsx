@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { apiClient } from '../api/client';
 import { BackButton, Field } from '../components/forms';
 import { Button } from '../components/ui';
 import { TRAVELER_TYPES } from '../data/mock';
@@ -30,22 +32,39 @@ const SignUpScreen: React.FC = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [weight, setWeight] = useState('');
   const [traveler, setTraveler] = useState<TravelerType | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const canSubmit =
-    firstName.trim() && lastName.trim() && email.trim() && weight.trim() && traveler;
+    firstName.trim() && lastName.trim() && email.trim() && password.trim() && weight.trim() && traveler;
 
-  const submit = () => {
-    if (!canSubmit) return;
-    updateProfile({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email.trim(),
-      weightKg: parseFloat(weight) || 70,
-      travelerType: traveler!,
-    });
-    navigation.reset({ index: 0, routes: [{ name: 'FindQuest' }] });
+  const submit = async () => {
+    if (!canSubmit || loading) return;
+    setLoading(true);
+    try {
+      await apiClient.register({
+        email: email.trim(),
+        password,
+        persona: traveler!,
+        weight_kg: parseFloat(weight) || 70,
+      });
+      updateProfile({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        weightKg: parseFloat(weight) || 70,
+        travelerType: traveler!,
+      });
+      Alert.alert('Account created', 'Please check your email to verify your account.');
+      navigation.navigate('LogIn');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      Alert.alert('Sign up failed', message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -92,6 +111,14 @@ const SignUpScreen: React.FC = () => {
             placeholder="you@email.com"
             keyboardType="email-address"
             autoCapitalize="none"
+          />
+          <Field
+            label="Password"
+            icon="lock-closed-outline"
+            value={password}
+            onChangeText={setPassword}
+            placeholder="••••••••"
+            secureTextEntry
           />
           <Field
             label="Weight"
@@ -148,6 +175,7 @@ const SignUpScreen: React.FC = () => {
           icon="arrow-forward"
           onPress={submit}
           disabled={!canSubmit}
+          loading={loading}
           fullWidth
           style={{ marginTop: spacing.xxl }}
         />

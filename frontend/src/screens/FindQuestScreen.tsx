@@ -4,6 +4,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -17,10 +18,11 @@ import AppScreen from '../components/AppScreen';
 import LeafletMap from '../components/LeafletMap';
 import { Button, Chip, SectionLabel, StatTile } from '../components/ui';
 import { summarizeWeather, weatherIcon } from '../components/weather';
-import { difficultyColor, SAMPLE_QUESTS } from '../data/mock';
-import { Quest, TransportMode } from '../data/types';
+import { difficultyColor } from '../data/mock';
+import { Quest, LatLng, TransportMode } from '../data/types';
 import { RootStackParamList } from '../navigation/types';
 import { useAppState } from '../state/AppState';
+import { apiClient } from '../api/client';
 import { colors, radius, shadow, spacing, type } from '../theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'FindQuest'>;
@@ -32,25 +34,94 @@ const MAX_MIN = 150;
 
 const FindQuestScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
-  const { completeQuest } = useAppState();
+  const appState = useAppState();
+  const { completeQuest } = appState;
 
   const [transport, setTransport] = useState<TransportMode>('car');
   const [travelMinutes, setTravelMinutes] = useState(45);
   const [quest, setQuest] = useState<Quest | null>(null);
   const [questIdx, setQuestIdx] = useState(0);
   const [accepted, setAccepted] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verified, setVerified] = useState(false);
   const [page, setPage] = useState(0);
 
   const pagerRef = useRef<ScrollView>(null);
 
-  const generate = (idx = 0) => {
-    setQuest(SAMPLE_QUESTS[idx % SAMPLE_QUESTS.length]);
-    setQuestIdx(idx);
-    setAccepted(false);
-    setVerified(false);
-    setPage(0);
+  const generate = async (idx = 0) => {
+    setGenerating(true);
+    try {
+      const persona =
+        appState.profile.travelerType === 'zen'
+          ? 'zen_explorer'
+          : appState.profile.travelerType;
+      const res = await apiClient.generateQuest({
+        user_id: appState.userId ?? 'guest',
+        persona,
+        lat: 42.6977,
+        lon: 23.3219,
+        transport_mode: transport === 'transit' ? 'public_transport' : transport,
+      });
+
+      const difficulty =
+        res.difficulty >= 8
+          ? 'Expert'
+          : res.difficulty >= 6
+          ? 'Hard'
+          : res.difficulty >= 4
+          ? 'Moderate'
+          : 'Easy';
+
+      const mapped: Quest = {
+        id: res.id,
+        name: res.trail_name,
+        teaser: `${res.trail_name} awaits you`,
+        region: 'Bulgaria',
+        difficulty,
+        ascentMinutes: res.estimated_duration_min,
+        distanceKm: res.distance_to_start_km,
+        elevationGainM: res.elevation_m,
+        calories: Math.round(res.elevation_m * 0.5),
+        steps: Math.round(res.distance_to_start_km * 1300),
+        route: [[res.trail_lat, res.trail_lon]] as LatLng[],
+        userLocation: [42.6977, 23.3219] as LatLng,
+        car: {
+          route: [[42.6977, 23.3219], [res.trail_lat, res.trail_lon]] as LatLng[],
+          driveMinutes: Math.round(res.travel_time_min),
+        },
+        transit: {
+          stopName: 'Nearest bus stop',
+          stopLocation: [42.6977, 23.3219] as LatLng,
+          walkPath: [[42.6977, 23.3219], [res.trail_lat, res.trail_lon]] as LatLng[],
+          walkMinutes: Math.round(res.travel_time_min * 1.3),
+        },
+        weather: (res.forecast.list ?? []).slice(0, 7).map((item, i) => ({
+          time: i === 0 ? 'Now' : `+${i}h`,
+          temp: Math.round(item.main.temp),
+          condition: item.weather[0].description.includes('rain')
+            ? 'rain'
+            : item.weather[0].description.includes('cloud')
+            ? 'cloudy'
+            : 'sunny',
+        })) as Quest['weather'],
+        outfit: res.clothing_tip
+          .split('.')
+          .filter((s: string) => s.trim())
+          .map((s: string) => s.trim()),
+      };
+
+      setQuest(mapped);
+      setQuestIdx(idx);
+      setAccepted(false);
+      setVerified(false);
+      setPage(0);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      Alert.alert('Quest generation failed', message);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const reset = () => {
@@ -70,18 +141,31 @@ const FindQuestScreen: React.FC = () => {
     if (i !== page) setPage(i);
   };
 
-  const runVerify = () => {
+  const runVerify = async () => {
     if (!quest) return;
     setVerifying(true);
-    // Simulate a GPS proximity scan against the route end point.
-    setTimeout(() => {
+    try {
+      const res = await apiClient.verifyCheckin({
+        quest_id: quest.id,
+        user_lat: 42.6977,
+        user_lon: 23.3219,
+        user_id: appState.userId ?? 'guest',
+      });
       setVerifying(false);
-      setVerified(true);
-      setTimeout(() => {
-        completeQuest(quest);
-        navigation.reset({ index: 0, routes: [{ name: 'FinishedQuests' }] });
-      }, 1100);
-    }, 1900);
+      if (res.verified) {
+        setVerified(true);
+        setTimeout(() => {
+          completeQuest(quest);
+          navigation.reset({ index: 0, routes: [{ name: 'FinishedQuests' }] });
+        }, 1100);
+      } else {
+        Alert.alert('Not there yet', 'You are not close enough to the summit.');
+      }
+    } catch (err: unknown) {
+      setVerifying(false);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      Alert.alert('Verification failed', message);
+    }
   };
 
   return (
@@ -93,6 +177,7 @@ const FindQuestScreen: React.FC = () => {
           travelMinutes={travelMinutes}
           setTravelMinutes={setTravelMinutes}
           onFind={() => generate(0)}
+          generating={generating}
         />
       ) : (
         <View style={{ flex: 1 }}>
@@ -224,7 +309,8 @@ const ConfigView: React.FC<{
   travelMinutes: number;
   setTravelMinutes: (n: number) => void;
   onFind: () => void;
-}> = ({ transport, setTransport, travelMinutes, setTravelMinutes, onFind }) => (
+  generating: boolean;
+}> = ({ transport, setTransport, travelMinutes, setTravelMinutes, onFind, generating }) => (
   <ScrollView
     contentContainerStyle={{ padding: spacing.xl, paddingBottom: spacing.xxxl }}
     showsVerticalScrollIndicator={false}
@@ -294,6 +380,7 @@ const ConfigView: React.FC<{
       title="Find Quest"
       icon="compass"
       onPress={onFind}
+      loading={generating}
       fullWidth
       style={{ marginTop: spacing.lg }}
     />
