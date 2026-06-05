@@ -7,8 +7,9 @@ import { BADGES } from '../data/mock';
 import { colors, radius, shadow, spacing, type } from '../theme';
 
 const BadgesScreen: React.FC = () => {
-  const earned = BADGES.filter((b) => b.earned);
-  const locked = BADGES.filter((b) => !b.earned);
+  const allBadges = BADGES.map(b => ({ ...b, earned: false }));
+  const earned = allBadges.filter((b) => b.earned);
+  const locked = allBadges.filter((b) => !b.earned);
 
   return (
     <AppScreen>
@@ -19,13 +20,13 @@ const BadgesScreen: React.FC = () => {
         <Text style={styles.kicker}>BADGES & AWARDS</Text>
         <Text style={styles.h1}>Your trophy cabinet</Text>
         <Text style={styles.lead}>
-          {earned.length} of {BADGES.length} badges earned. Keep climbing to unlock the rest.
+          {earned.length} of {allBadges.length} badges earned. Keep climbing to unlock the rest.
         </Text>
 
         {/* Progress bar */}
         <View style={styles.progressTrack}>
           <View
-            style={[styles.progressFill, { width: `${(earned.length / BADGES.length) * 100}%` }]}
+            style={[styles.progressFill, { width: `${(earned.length / allBadges.length) * 100}%` }]}
           />
         </View>
 

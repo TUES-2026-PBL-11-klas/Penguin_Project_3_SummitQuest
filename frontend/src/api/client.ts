@@ -1,4 +1,4 @@
-export const BASE_URL = 'http://localhost:8000';
+const BASE_URL = 'http://192.168.68.68:8000'
 
 let _token: string | null = null;
 
@@ -14,7 +14,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
-export const apiClient = {
+export const apiClient = {  
   register(data: { email: string; password: string; persona: string; weight_kg: number }) {
     return request<{ id: string; email: string; persona: string; verification_token: string }>(
       '/auth/register',

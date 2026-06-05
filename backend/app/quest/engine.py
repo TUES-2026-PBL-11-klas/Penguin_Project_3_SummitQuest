@@ -8,7 +8,7 @@ from uuid import uuid4
 import structlog
 
 from app.quest.clients import AIClient
-from app.tracking.osrm_client import OsrmClient
+from app.tracking.osrm_client import OsrmClient, TravelEstimate
 from app.tracking.weather_client import WeatherClient
 from app.quest.strategies import TrailPointData, get_strategy
 
@@ -41,6 +41,7 @@ class ExternalData:
     forecast: dict = field(default_factory=dict)
     travel_time_min: float = 0.0
     clothing_tip: str = ""
+    travel_estimate: TravelEstimate | None = None
 
 
 class QuestEngineImpl:
@@ -68,7 +69,7 @@ class QuestEngineImpl:
 
         async def producer() -> None:
             await queue.put(("weather", self._weather.get_forecast(trail_lat, trail_lon)))
-            await queue.put( ( "osrm", self._osrm.get_travel_time_min( user_lat, user_lon, trail_lat, trail_lon, transport_mode=transport_mode, ), ) )            
+            await queue.put(("osrm", self._osrm.get_travel_estimate(user_lat, user_lon, trail_lat, trail_lon, transport_mode=transport_mode)))
             await queue.put(None)
 
         async def consumer() -> None:
@@ -81,7 +82,8 @@ class QuestEngineImpl:
                 if key == "weather":
                     data.forecast = result
                 elif key == "osrm":
-                    data.travel_time_min = result
+                    data.travel_estimate = result
+                    data.travel_time_min = result.travel_time_min
 
         await asyncio.gather(producer(), consumer())
 
@@ -128,4 +130,9 @@ class QuestEngineImpl:
             "trail_lat": selected.lat,
             "trail_lon": selected.lon,
             "elevation_m": elevation_m,
+            "travel_time_min": external.travel_time_min if transport_mode == "car" else None,
+            "transit_walk_time_min": external.travel_estimate.travel_time_min if transport_mode == "public_transport" and external.travel_estimate else None,
+            "transit_stop_name": external.travel_estimate.nearest_bus_stop.name if transport_mode == "public_transport" and external.travel_estimate and external.travel_estimate.nearest_bus_stop else ("Nearest bus stop" if transport_mode == "public_transport" else None),
+            "transit_stop_lat": external.travel_estimate.nearest_bus_stop.lat if transport_mode == "public_transport" and external.travel_estimate and external.travel_estimate.nearest_bus_stop else None,
+            "transit_stop_lon": external.travel_estimate.nearest_bus_stop.lon if transport_mode == "public_transport" and external.travel_estimate and external.travel_estimate.nearest_bus_stop else None,
         }

@@ -18,6 +18,7 @@ import { Button, Logo } from '../components/ui';
 import { RootStackParamList } from '../navigation/types';
 import { useAppState } from '../state/AppState';
 import { colors, spacing, type } from '../theme';
+import { TravelerType } from '../data/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'LogIn'>;
 
@@ -37,7 +38,7 @@ const LogInScreen: React.FC = () => {
       const { access_token } = await apiClient.login({ email: email.trim(), password });
       const data = await apiClient.getMe(access_token);
       appState.setAuth(access_token, data.id);
-      appState.updateProfile({ email: data.email, persona: data.persona } as Parameters<typeof appState.updateProfile>[0]);
+      appState.updateProfile({ email: data.email, travelerType: data.persona as TravelerType });
       navigation.reset({ index: 0, routes: [{ name: 'FindQuest' }] });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';

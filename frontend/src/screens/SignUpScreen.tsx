@@ -47,7 +47,7 @@ const SignUpScreen: React.FC = () => {
       await apiClient.register({
         email: email.trim(),
         password,
-        persona: traveler!,
+        persona: traveler === 'zen' ? 'zen_explorer' : traveler!,
         weight_kg: parseFloat(weight) || 70,
       });
       updateProfile({

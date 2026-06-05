@@ -85,9 +85,6 @@ async def login_user(
 
     if not user:
         return None
-    
-    if not user.is_verified:
-        return None
 
     if not verify_password(
         password,

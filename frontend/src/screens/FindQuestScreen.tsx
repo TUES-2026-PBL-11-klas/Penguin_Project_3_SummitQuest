@@ -80,21 +80,25 @@ const FindQuestScreen: React.FC = () => {
         region: 'Bulgaria',
         difficulty,
         ascentMinutes: res.estimated_duration_min,
-        distanceKm: res.distance_to_start_km,
+        distanceKm: Math.round(res.elevation_m / 100) / 10,
         elevationGainM: res.elevation_m,
-        calories: Math.round(res.elevation_m * 0.5),
-        steps: Math.round(res.distance_to_start_km * 1300),
+        calories: Math.round(res.elevation_m * 0.8),
+        steps: Math.round((res.elevation_m / 100) * 1300),
         route: [[res.trail_lat, res.trail_lon]] as LatLng[],
         userLocation: [42.6977, 23.3219] as LatLng,
         car: {
           route: [[42.6977, 23.3219], [res.trail_lat, res.trail_lon]] as LatLng[],
-          driveMinutes: Math.round(res.travel_time_min),
+          driveMinutes: Math.round(res.travel_time_min ?? 45),
         },
         transit: {
-          stopName: 'Nearest bus stop',
-          stopLocation: [42.6977, 23.3219] as LatLng,
-          walkPath: [[42.6977, 23.3219], [res.trail_lat, res.trail_lon]] as LatLng[],
-          walkMinutes: Math.round(res.travel_time_min * 1.3),
+          stopName: (res as any).transit_stop_name ?? 'Nearest bus stop',
+          stopLocation: (res as any).transit_stop_lat && (res as any).transit_stop_lon
+            ? [(res as any).transit_stop_lat, (res as any).transit_stop_lon] as LatLng
+            : [42.6977, 23.3219] as LatLng,
+          walkPath: (res as any).transit_stop_lat && (res as any).transit_stop_lon
+            ? [[(res as any).transit_stop_lat, (res as any).transit_stop_lon], [res.trail_lat, res.trail_lon]] as LatLng[]
+            : [[42.6977, 23.3219], [res.trail_lat, res.trail_lon]] as LatLng[],
+          walkMinutes: Math.round((res as any).transit_walk_time_min ?? 20),
         },
         weather: (res.forecast.list ?? []).slice(0, 7).map((item, i) => ({
           time: i === 0 ? 'Now' : `+${i}h`,
@@ -117,8 +121,12 @@ const FindQuestScreen: React.FC = () => {
       setVerified(false);
       setPage(0);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      Alert.alert('Quest generation failed', message);
+      if (err instanceof Error && transport === 'transit' && (err.message.includes('500') || err.message.toLowerCase().includes('internal server'))) {
+        Alert.alert('Transport error', 'Public transport routing is unavailable. Please use car mode.');
+      } else {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        Alert.alert('Quest generation failed', message);
+      }
     } finally {
       setGenerating(false);
     }
@@ -163,8 +171,12 @@ const FindQuestScreen: React.FC = () => {
       }
     } catch (err: unknown) {
       setVerifying(false);
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      Alert.alert('Verification failed', message);
+      if (err instanceof Error && (err.message.includes('404') || err.message.toLowerCase().includes('not found'))) {
+        Alert.alert('Quest not found', 'The quest was not saved to the database yet.');
+      } else {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        Alert.alert('Verification failed', message);
+      }
     }
   };
 
