@@ -98,14 +98,17 @@ async def test_get_public_transport_estimate_uses_bus_stop_and_walking_route(
         ]
     }
 
+    http_post_mock = mocker.patch(
+        "app.tracking.osrm_client.httpx.AsyncClient.post",
+        new_callable=AsyncMock,
+    )
+    http_post_mock.return_value = MockResponse(overpass_response)
+
     http_get_mock = mocker.patch(
         "app.tracking.osrm_client.httpx.AsyncClient.get",
         new_callable=AsyncMock,
     )
-    http_get_mock.side_effect = [
-        MockResponse(overpass_response),
-        MockResponse(osrm_walking_response),
-    ]
+    http_get_mock.return_value = MockResponse(osrm_walking_response)
 
     client = OsrmClient(
         osrm_base_url="https://osrm.test",
@@ -125,13 +128,14 @@ async def test_get_public_transport_estimate_uses_bus_stop_and_walking_route(
     assert result.distance_m == 800
     assert result.nearest_bus_stop is not None
     assert result.nearest_bus_stop.name == "Test Bus Stop"
-    assert http_get_mock.await_count == 2
+    assert http_post_mock.await_count == 1
+    assert http_get_mock.await_count == 1
 
-    first_call_url = http_get_mock.await_args_list[0].args[0]
-    second_call_url = http_get_mock.await_args_list[1].args[0]
+    overpass_call_url = http_post_mock.call_args.args[0]
+    osrm_call_url = http_get_mock.call_args.args[0]
 
-    assert first_call_url == "https://overpass.test"
-    assert "/route/v1/foot/" in second_call_url
+    assert overpass_call_url == "https://overpass.test"
+    assert "/route/v1/foot/" in osrm_call_url
 
 
 @pytest.mark.asyncio
@@ -153,14 +157,17 @@ async def test_public_transport_falls_back_to_haversine_when_walking_route_fails
         ]
     }
 
+    http_post_mock = mocker.patch(
+        "app.tracking.osrm_client.httpx.AsyncClient.post",
+        new_callable=AsyncMock,
+    )
+    http_post_mock.return_value = MockResponse(overpass_response)
+
     http_get_mock = mocker.patch(
         "app.tracking.osrm_client.httpx.AsyncClient.get",
         new_callable=AsyncMock,
     )
-    http_get_mock.side_effect = [
-        MockResponse(overpass_response),
-        MockResponse({"message": "profile not found"}, status_code=400),
-    ]
+    http_get_mock.return_value = MockResponse({"message": "profile not found"}, status_code=400)
 
     client = OsrmClient(
         osrm_base_url="https://osrm.test",
@@ -182,11 +189,11 @@ async def test_public_transport_falls_back_to_haversine_when_walking_route_fails
 
 @pytest.mark.asyncio
 async def test_public_transport_raises_when_no_bus_stop_found(mocker):
-    http_get_mock = mocker.patch(
-        "app.tracking.osrm_client.httpx.AsyncClient.get",
+    http_post_mock = mocker.patch(
+        "app.tracking.osrm_client.httpx.AsyncClient.post",
         new_callable=AsyncMock,
     )
-    http_get_mock.return_value = MockResponse({"elements": []})
+    http_post_mock.return_value = MockResponse({"elements": []})
 
     client = OsrmClient(
         osrm_base_url="https://osrm.test",
