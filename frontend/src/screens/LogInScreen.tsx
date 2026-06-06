@@ -38,7 +38,12 @@ const LogInScreen: React.FC = () => {
       const { access_token } = await apiClient.login({ email: email.trim(), password });
       const data = await apiClient.getMe(access_token);
       appState.setAuth(access_token, data.id);
-      appState.updateProfile({ email: data.email, travelerType: data.persona as TravelerType });
+      appState.updateProfile({
+        email: data.email,
+        travelerType: data.persona as TravelerType,
+        firstName: data.first_name ?? '',
+        lastName: data.last_name ?? '',
+      });
       navigation.reset({ index: 0, routes: [{ name: 'FindQuest' }] });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';

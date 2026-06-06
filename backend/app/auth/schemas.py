@@ -6,6 +6,8 @@ class RegisterRequest(BaseModel):
     password: str
     persona: str
     weight_kg: float
+    first_name: str | None = None
+    last_name: str | None = None
 
 
 class LoginRequest(BaseModel):

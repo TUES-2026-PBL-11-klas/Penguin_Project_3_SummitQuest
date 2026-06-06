@@ -49,6 +49,8 @@ const SignUpScreen: React.FC = () => {
         password,
         persona: traveler === 'zen' ? 'zen_explorer' : traveler!,
         weight_kg: parseFloat(weight) || 70,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
       });
       updateProfile({
         firstName: firstName.trim(),

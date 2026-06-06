@@ -1,8 +1,11 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
+from app.models.quest import Quest as QuestModel
 from app.quest.clients import AIClient
 from app.tracking.osrm_client import OsrmClient
 from app.tracking.weather_client import WeatherClient
@@ -40,9 +43,10 @@ def get_engine(db: AsyncSession = Depends(get_db)) -> QuestEngineImpl:
 async def generate_quest(
     request: QuestRequest,
     engine: QuestEngineImpl = Depends(get_engine),
+    db: AsyncSession = Depends(get_db),
 ) -> dict:
     try:
-        return await engine.generate(
+        quest_dict = await engine.generate(
             user_id=request.user_id,
             persona=request.persona,
             lat=request.lat,
@@ -50,6 +54,24 @@ async def generate_quest(
             transport_mode=request.transport_mode,
             trail_points=MOCK_TRAILS,
         )
+
+        db_quest = QuestModel(
+            id=quest_dict["id"],
+            user_id=quest_dict["user_id"],
+            trail_point_id=quest_dict["trail_point_id"],
+            persona_used=quest_dict["persona_used"],
+            difficulty=quest_dict["difficulty"],
+            distance_to_start_km=quest_dict["distance_to_start_km"],
+            estimated_duration_min=quest_dict["estimated_duration_min"],
+            transport_mode=quest_dict["transport_mode"],
+            status="generated",
+            generated_at=datetime.utcnow(),
+            expires_at=datetime.fromisoformat(quest_dict["expires_at"]),
+        )
+        db.add(db_quest)
+        await db.commit()
+
+        return quest_dict
 
     except NoTrailPointsError as e:
         raise HTTPException(status_code=404, detail=str(e))

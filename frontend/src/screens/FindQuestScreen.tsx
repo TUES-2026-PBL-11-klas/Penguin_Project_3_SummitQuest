@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import * as Location from 'expo-location';
 import {
   ActivityIndicator,
   Alert,
@@ -48,6 +49,17 @@ const FindQuestScreen: React.FC = () => {
   const [page, setPage] = useState(0);
 
   const pagerRef = useRef<ScrollView>(null);
+  const [userLocation, setUserLocation] = useState<[number, number]>([42.6977, 23.3219]);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const loc = await Location.getCurrentPositionAsync({});
+        setUserLocation([loc.coords.latitude, loc.coords.longitude]);
+      }
+    })();
+  }, []);
 
   const generate = async (idx = 0) => {
     setGenerating(true);
@@ -59,8 +71,8 @@ const FindQuestScreen: React.FC = () => {
       const res = await apiClient.generateQuest({
         user_id: appState.userId ?? 'guest',
         persona,
-        lat: 42.6977,
-        lon: 23.3219,
+        lat: userLocation[0],
+        lon: userLocation[1],
         transport_mode: transport === 'transit' ? 'public_transport' : transport,
       });
 
@@ -85,9 +97,9 @@ const FindQuestScreen: React.FC = () => {
         calories: Math.round(res.elevation_m * 0.8),
         steps: Math.round((res.elevation_m / 100) * 1300),
         route: [[res.trail_lat, res.trail_lon]] as LatLng[],
-        userLocation: [42.6977, 23.3219] as LatLng,
+        userLocation: userLocation as LatLng,
         car: {
-          route: [[42.6977, 23.3219], [res.trail_lat, res.trail_lon]] as LatLng[],
+          route: [userLocation, [res.trail_lat, res.trail_lon]] as LatLng[],
           driveMinutes: Math.round(res.travel_time_min ?? 45),
         },
         transit: {
@@ -155,8 +167,8 @@ const FindQuestScreen: React.FC = () => {
     try {
       const res = await apiClient.verifyCheckin({
         quest_id: quest.id,
-        user_lat: 42.6977,
-        user_lon: 23.3219,
+        user_lat: userLocation[0],
+        user_lon: userLocation[1],
         user_id: appState.userId ?? 'guest',
       });
       setVerifying(false);

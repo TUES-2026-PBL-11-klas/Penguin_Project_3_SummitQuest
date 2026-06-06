@@ -15,7 +15,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const apiClient = {  
-  register(data: { email: string; password: string; persona: string; weight_kg: number }) {
+  register(data: { email: string; password: string; persona: string; weight_kg: number; first_name: string; last_name: string }) {
     return request<{ id: string; email: string; persona: string; verification_token: string }>(
       '/auth/register',
       {
@@ -35,7 +35,7 @@ export const apiClient = {
   },
 
   getMe(token: string) {
-    return request<{ id: string; email: string; persona: string; level: number; xp: number }>(
+    return request<{ id: string; email: string; persona: string; level: number; xp: number; first_name: string | null; last_name: string | null }>(
       '/auth/me',
       { headers: { Authorization: `Bearer ${token}` } },
     );

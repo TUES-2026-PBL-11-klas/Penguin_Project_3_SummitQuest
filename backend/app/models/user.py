@@ -18,6 +18,9 @@ class User(Base):
 
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
 
+    first_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    last_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)

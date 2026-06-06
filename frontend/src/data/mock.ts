@@ -228,7 +228,7 @@ export const BADGES: Badge[] = [
     title: 'Altitude Seeker',
     description: 'Climbed over 1,000 m in a single quest.',
     icon: 'trending-up',
-    earned: true,
+    earned: false,
     accent: '#7A604A',
   },
   {
@@ -236,7 +236,7 @@ export const BADGES: Badge[] = [
     title: 'Trail Explorer',
     description: 'Finished quests in 3 different regions.',
     icon: 'compass',
-    earned: true,
+    earned: false,
     accent: '#5B9A78',
   },
   {
@@ -260,7 +260,7 @@ export const BADGES: Badge[] = [
     title: 'New Adventurer',
     description: 'Make your first adventure.',
     icon: 'map-outline',
-    earned: true,
+    earned: false,
     accent: '#3D7A5F',
   },
   {
@@ -322,12 +322,12 @@ export const BADGES: Badge[] = [
 ];
 
 export const DEFAULT_PROFILE: UserProfile = {
-  firstName: 'Mila',
-  lastName: 'Danailova',
-  email: 'mdanileychenko@appolica.com',
-  weightKg: 64,
+  firstName: '',
+  lastName: '',
+  email: '',
+  weightKg: 70,
   travelerType: 'photographer',
-  totalKm: 132.4,
-  totalCalories: 18420,
-  totalSteps: 214800,
+  totalKm: 0,
+  totalCalories: 0,
+  totalSteps: 0,
 };

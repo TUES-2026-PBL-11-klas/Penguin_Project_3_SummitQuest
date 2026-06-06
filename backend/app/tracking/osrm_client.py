@@ -219,9 +219,10 @@ class OsrmClient:
 
         try:
             async with httpx.AsyncClient(timeout=self._timeout_seconds) as client:
-                response = await client.get(
+                response = await client.post(
                     self._overpass_base_url,
-                    params={"data": query},
+                    content=f"data={query}".encode(),
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
                 )
                 response.raise_for_status()
                 data: dict[str, Any] = response.json()

@@ -36,7 +36,9 @@ async def register(
             email=request.email,
             password=request.password,
             persona=request.persona,
-            weight_kg=request.weight_kg
+            weight_kg=request.weight_kg,
+            first_name=request.first_name,
+            last_name=request.last_name,
         )
         
         user = result["user"]
@@ -108,5 +110,7 @@ async def me(
         "email": current_user.email,
         "persona": current_user.persona,
         "level": current_user.level,
-        "xp": current_user.xp
+        "xp": current_user.xp,
+        "first_name": current_user.first_name,
+        "last_name": current_user.last_name,
     }

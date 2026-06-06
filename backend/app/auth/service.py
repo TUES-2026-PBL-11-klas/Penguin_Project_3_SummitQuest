@@ -21,7 +21,9 @@ async def create_user(
     email: str,
     password: str,
     persona: str,
-    weight_kg: float
+    weight_kg: float,
+    first_name: str | None = None,
+    last_name: str | None = None,
 ):
     result = await db.execute(
         select(User).where(
@@ -38,6 +40,8 @@ async def create_user(
 
     user = User(
         email=email,
+        first_name=first_name,
+        last_name=last_name,
         password_hash=hash_password(password),
         is_verified=False,
         persona=PersonaEnum(persona),
