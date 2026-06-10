@@ -95,10 +95,23 @@ class OsrmClient:
             )
 
         if transport_mode == "public_transport":
-            return await self._get_public_transport_estimate(
-                route_start_lat=to_lat,
-                route_start_lon=to_lon,
-            )
+            try:
+                return await self._get_public_transport_estimate(
+                    route_start_lat=to_lat,
+                    route_start_lon=to_lon,
+                )
+            except Exception as e:
+                logger.warning(
+                    "public_transport_fallback",
+                    error=str(e)
+                )
+
+                return await self._get_car_estimate(
+                    from_lat=from_lat,
+                    from_lon=from_lon,
+                    to_lat=to_lat,
+                    to_lon=to_lon,
+                )
 
         raise InvalidTransportModeError(f"Unsupported transport mode: {transport_mode}")
 
